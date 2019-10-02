@@ -1,0 +1,332 @@
+---
+title: "PokerHand"
+author: "Fernando e Leonardo"
+date: "01/10/2019"
+output: ioslides_presentation
+---
+
+# Avaliação
+
+## Carregando as bibliotecas
+
+```{r}
+library(readr)
+library(dplyr)
+library(sqldf)
+library(e1071)
+library(caret)
+library(ggplot2)
+```
+
+## REMOVER ANTES DE ENVIAR!
+
+https://www.kaggle.com/jimmyklee/uci-poker-hand-classification
+e1071: biblioteca para aplicação de Naïve Bayes (tutorial em https://www.r-bloggers.com/understanding-naive-bayes-classifier-using-r/)
+https://www.chemical-ecology.net/java/possible.htm
+
+
+## Fonte
+
+## Regras do POKER
+
+<!-- 
+
+https://www.pokerstars.com/br/poker/games/rules/?no_redirect=1
+
+https://br.pokernews.com/regras-poker/
+
+Mãos Do Poker Da Mais Alta À Mais Baixa. 
+
+1. Royal Flush
+A melhor mão possível no Texas Hold'em é Dez, Valete, Dama, Rei e Ás, todos do mesmo naipe
+
+2. Straight Flush
+Cinco cartas do mesmo naipe e em sequência
+
+3. Quadra (Four of a kind)
+Quaisquer quatro cartas de mesmo número ou valor
+
+4. Full House
+Uma trinca e um par em uma mesma mão
+
+5. Flush
+Cinco cartas do mesmo naipe, em qualquer ordem
+
+6. Sequência (Straight)
+Cinco cartas de qualquer naipe, em ordem
+
+7. Trinca (Three of a kind)
+Quaisquer três cartas de mesmo número ou valor
+
+Dois Pares (Two pairs)
+Dois diferentes pares em uma mesma mão
+
+Um Par (One pair)
+Quais duas cartas de mesmo número ou valor
+
+Carta Mais Alta
+A carta mais alta é o Ás enquanto a mais baixa é o 2 (Dois)
+
+-->
+
+<!--
+
+Attribute Information:
+
+1) S1 "Suit of card #1"
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
+
+2) C1 "Rank of card #1"
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
+
+3) S2 "Suit of card #2"
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
+
+4) C2 "Rank of card #2"
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
+
+5) S3 "Suit of card #3"
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
+
+6) C3 "Rank of card #3"
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
+
+7) S4 "Suit of card #4"
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
+
+8) C4 "Rank of card #4"
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
+
+9) S5 "Suit of card #5"
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
+
+10) C5 "Rank of card 5"
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
+
+11) CLASS "Poker Hand"
+Ordinal (0-9)
+
+0: Nothing in hand; not a recognized poker hand
+1: One pair; one pair of equal ranks within five cards
+2: Two pairs; two pairs of equal ranks within five cards
+3: Three of a kind; three equal ranks within five cards
+4: Straight; five cards, sequentially ranked with no gaps
+5: Flush; five cards with the same suit
+6: Full house; pair + different rank three of a kind
+7: Four of a kind; four equal ranks within five cards
+8: Straight flush; straight + flush
+9: Royal flush; {Ace, King, Queen, Jack, Ten} + flush
+
+
+
+-->
+
+* Treinar com a base de treino
+* Testar com os 1M de teste
+* 
+
+https://archive.ics.uci.edu/ml/datasets/Poker+Hand
+
+## Análise
+
+Leitura do arquivo. Os dados serão lidos como "factors" porquê são variáveis ordinais discretas.
+```{r}
+pokerds <- read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
+```
+
+Estrutura e sumário
+```{r}
+str(pokerds)
+```
+Sumário do arquivo
+```{r}
+summary(pokerds)
+```
+
+
+Cabeçalho do arquivo
+```{r}
+head(pokerds)
+```
+
+## SQLdf
+
+<!-- Total de linhas do dataset -->
+```{r}
+sqldf('SELECT COUNT(1) AS [QuantidadeTotal] FROM pokerds')
+```
+
+<!-- Divisão dos registros no dataset -->
+```{r}
+sqldf('SELECT COUNT(1) AS [Quantidade], 
+              class, 
+              (CASE WHEN Class = 0 THEN "Nothing"
+                   WHEN Class = 1 THEN "One pair"
+                   WHEN Class = 2 THEN "Two pairs"
+                   WHEN Class = 3 THEN "Three of a kind"
+                   WHEN Class = 4 THEN "Straight"
+                   WHEN Class = 5 THEN "Flush"
+                   WHEN Class = 6 THEN "Full house"
+                   WHEN Class = 7 THEN "Four of a kind"
+                   WHEN Class = 8 THEN "Straight flush"
+                   WHEN Class = 9 THEN "Royal flush" 
+              END) AS [TipoENG],
+              ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerds)) * 100),2) AS [%]
+      FROM pokerds 
+      GROUP BY class 
+      ORDER BY [Quantidade] DESC')
+```
+
+<!-- Unica combinação que se repetiu -->
+```{r}
+sqldf('SELECT DISTINCT 
+              COUNT(1) AS [Quantidade], 
+              class, 
+              (CASE WHEN Class = 0 THEN "Nothing"
+                   WHEN Class = 1 THEN "One pair"
+                   WHEN Class = 2 THEN "Two pairs"
+                   WHEN Class = 3 THEN "Three of a kind"
+                   WHEN Class = 4 THEN "Straight"
+                   WHEN Class = 5 THEN "Flush"
+                   WHEN Class = 6 THEN "Full house"
+                   WHEN Class = 7 THEN "Four of a kind"
+                   WHEN Class = 8 THEN "Straight flush"
+                   WHEN Class = 9 THEN "Royal flush" 
+              END) AS [TipoENG],
+              S1,
+              C1,
+              S2,
+              C2,
+              S3,
+              C3,
+              S4,
+              C4,
+              S5,
+              C5
+      FROM pokerds 
+      GROUP BY class, [TipoENG], S1, C1, S2, C2, S3, C3, S4, C4, S5, C5 
+      HAVING COUNT(1) > 1
+      ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC')
+```
+
+<!-- Quantidade de linhas onde as combinações são unicas 25006 de 25010-->
+```{r}
+sqldf('SELECT DISTINCT 
+              COUNT(1) AS [Quantidade], 
+              class, 
+              (CASE WHEN Class = 0 THEN "Nothing"
+                   WHEN Class = 1 THEN "One pair"
+                   WHEN Class = 2 THEN "Two pairs"
+                   WHEN Class = 3 THEN "Three of a kind"
+                   WHEN Class = 4 THEN "Straight"
+                   WHEN Class = 5 THEN "Flush"
+                   WHEN Class = 6 THEN "Full house"
+                   WHEN Class = 7 THEN "Four of a kind"
+                   WHEN Class = 8 THEN "Straight flush"
+                   WHEN Class = 9 THEN "Royal flush" 
+              END) AS [TipoENG],
+              S1,
+              C1,
+              S2,
+              C2,
+              S3,
+              C3,
+              S4,
+              C4,
+              S5,
+              C5
+      FROM pokerds 
+      GROUP BY class, [TipoENG], S1, C1, S2, C2, S3, C3, S4, C4, S5, C5 
+      HAVING COUNT(1) = 1
+      ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC')
+```
+<!-- Quantida de números distinstos por coluna -->
+```{r}
+sqldf('SELECT DISTINCT
+       S1,
+       C1,
+       COUNT(1) AS [Quantidade],
+       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerds)) * 100),2) AS [%]
+      FROM pokerds 
+      GROUP BY S1, C1
+      ORDER BY [Quantidade] DESC')
+```
+<!-- Quantida de números distinstos por coluna -->
+```{r}
+sqldf('SELECT DISTINCT
+       C1,
+       S1,
+       COUNT(1) AS [Quantidade],
+       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerds)) * 100),2) AS [%]
+      FROM pokerds 
+      GROUP BY C1
+      ORDER BY [Quantidade] DESC')
+```
+
+
+```{r}
+sqldf('SELECT *
+      FROM pokerds  ')
+```
+
+
+
+
+## Treinamento
+
+```{r}
+#len <- floor(0.7 * nrow(pokerds))
+#keys = sample(seq_len(nrow(pokerds)), size=len)
+#pokerTreino <- data.frame(pokerds[keys,])
+#pokerTeste <- pokerds[-keys,]
+pokerTreino <- data.frame(pokerds)
+resultado <- naiveBayes(pokerTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5")],pokerTreino[,c("CLASS")])
+class(resultado)
+summary(resultado)
+```
+
+```{r}
+str(resultado)
+resultado$apriori
+for (i in 0:9) {
+   print(resultado$tables[i])
+}
+resultado$levels
+```
+
+```{r}
+pokerTeste <- read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
+pokerTeste
+```
+
+```{r}
+pokerTeste$resultado_previsto <- predict(resultado, newdata = pokerTeste[1:10], type = "class")
+View(pokerTeste)
+```
+
+```{r}
+matrizConfusao <- table(pokerTeste$resultado_previsto,pokerTeste$CLASS)
+matrizConfusao
+
+TP <- matrizConfusao[1,1]
+FP <- matrizConfusao[1,10]
+TN <- matrizConfusao[10,10]
+FN <- matrizConfusao[10,1]
+
+acuracia <- (TP + TN) / (TP + TN + FP + FN)
+precisao <- (TP) / (TP + FP)
+recall <- (TP) / (TP + FN)
+f1score <- (10 * TP) / (10 * TP + FP + FN)
+
+acuracia
+precisao
+recall
+f1score
+```
+
+
+```{r}
+pokerTeste$resultado <- predict(resultado, newdata = novosDados, type = "class")
+```
+
+* como testar?
