@@ -131,29 +131,36 @@ https://archive.ics.uci.edu/ml/datasets/Poker+Hand
 
 Leitura do arquivo. Os dados serão lidos como "factors" porquê são variáveis ordinais discretas.
 ```{r}
-pokerds <- read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
+pokerTreino <- read_csv("datasets/poker-hand-training-true.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
+View(pokerTreino)
+```
+
+Leitura do arquivo de teste
+```{r}
+pokerTeste <- read_csv("datasets/poker-hand-testing.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
+View(pokerTeste)
 ```
 
 Estrutura e sumário
 ```{r}
-str(pokerds)
+str(pokerTreino)
 ```
 Sumário do arquivo
 ```{r}
-summary(pokerds)
+summary(pokerTreino)
 ```
 
 
 Cabeçalho do arquivo
 ```{r}
-head(pokerds)
+head(pokerTreino)
 ```
 
 ## SQLdf
 
 <!-- Total de linhas do dataset -->
 ```{r}
-sqldf('SELECT COUNT(1) AS [QuantidadeTotal] FROM pokerds')
+sqldf('SELECT COUNT(1) AS [QuantidadeTotal] FROM pokerTreino')
 ```
 
 <!-- Divisão dos registros no dataset -->
@@ -171,8 +178,8 @@ sqldf('SELECT COUNT(1) AS [Quantidade],
                    WHEN Class = 8 THEN "Straight flush"
                    WHEN Class = 9 THEN "Royal flush" 
               END) AS [TipoENG],
-              ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerds)) * 100),2) AS [%]
-      FROM pokerds 
+              ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerTreino)) * 100),2) AS [%]
+      FROM pokerTreino 
       GROUP BY class 
       ORDER BY [Quantidade] DESC')
 ```
@@ -203,7 +210,7 @@ sqldf('SELECT DISTINCT
               C4,
               S5,
               C5
-      FROM pokerds 
+      FROM pokerTreino 
       GROUP BY class, [TipoENG], S1, C1, S2, C2, S3, C3, S4, C4, S5, C5 
       HAVING COUNT(1) > 1
       ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC')
@@ -235,7 +242,7 @@ sqldf('SELECT DISTINCT
               C4,
               S5,
               C5
-      FROM pokerds 
+      FROM pokerTreino 
       GROUP BY class, [TipoENG], S1, C1, S2, C2, S3, C3, S4, C4, S5, C5 
       HAVING COUNT(1) = 1
       ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC')
@@ -246,8 +253,8 @@ sqldf('SELECT DISTINCT
        S1,
        C1,
        COUNT(1) AS [Quantidade],
-       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerds)) * 100),2) AS [%]
-      FROM pokerds 
+       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerTreino)) * 100),2) AS [%]
+      FROM pokerTreino 
       GROUP BY S1, C1
       ORDER BY [Quantidade] DESC')
 ```
@@ -257,8 +264,8 @@ sqldf('SELECT DISTINCT
        C1,
        S1,
        COUNT(1) AS [Quantidade],
-       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerds)) * 100),2) AS [%]
-      FROM pokerds 
+       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerTreino)) * 100),2) AS [%]
+      FROM pokerTreino 
       GROUP BY C1
       ORDER BY [Quantidade] DESC')
 ```
@@ -266,7 +273,7 @@ sqldf('SELECT DISTINCT
 
 ```{r}
 sqldf('SELECT *
-      FROM pokerds  ')
+      FROM pokerTreino  ')
 ```
 
 
@@ -275,11 +282,11 @@ sqldf('SELECT *
 ## Treinamento
 
 ```{r}
-#len <- floor(0.7 * nrow(pokerds))
-#keys = sample(seq_len(nrow(pokerds)), size=len)
-#pokerTreino <- data.frame(pokerds[keys,])
-#pokerTeste <- pokerds[-keys,]
-pokerTreino <- data.frame(pokerds)
+#len <- floor(0.7 * nrow(pokerTreino))
+#keys = sample(seq_len(nrow(pokerTreino)), size=len)
+#pokerTreino <- data.frame(pokerTreino[keys,])
+#pokerTeste <- pokerTreino[-keys,]
+pokerTreino <- data.frame(pokerTreino)
 resultado <- naiveBayes(pokerTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5")],pokerTreino[,c("CLASS")])
 class(resultado)
 summary(resultado)
@@ -295,11 +302,6 @@ resultado$levels
 ```
 
 ```{r}
-pokerTeste <- read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
-pokerTeste
-```
-
-```{r}
 pokerTeste$resultado_previsto <- predict(resultado, newdata = pokerTeste[1:10], type = "class")
 View(pokerTeste)
 ```
@@ -307,6 +309,8 @@ View(pokerTeste)
 ```{r}
 matrizConfusao <- table(pokerTeste$resultado_previsto,pokerTeste$CLASS)
 matrizConfusao
+
+confusionMatrix(Predict, df_test$ocorrencia_classificacao)
 
 TP <- matrizConfusao[1,1]
 FP <- matrizConfusao[1,10]
@@ -324,9 +328,75 @@ recall
 f1score
 ```
 
+## Treinando com a base de teste
+```{r}
+len <- floor(0.7 * nrow(pokerTeste))
+keys = sample(seq_len(nrow(pokerTeste)), size=len)
+dsTreino <- data.frame(pokerTeste[keys,])
+dsTeste <- pokerTeste[-keys,]
+```
 
 ```{r}
-pokerTeste$resultado <- predict(resultado, newdata = novosDados, type = "class")
+nv <- naiveBayes(dsTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5")],dsTreino[,c("CLASS")])
+```
+
+```{r}
+str(nv)
+nv$apriori
+for (i in 0:9) {
+   print(nv$tables[i])
+}
+nv$levels
+```
+
+
+```{r}
+dsTeste$resultado <- predict(nv, newdata = dsTeste, type = "class")
+```
+
+```{r}
+matrizConfusao <- table(dsTeste$resultado,dsTeste$CLASS)
+matrizConfusao
+```
+
+```{r}
+sqldf('SELECT COUNT(1) AS [Quantidade], 
+              class, 
+              (CASE WHEN Class = 0 THEN "Nothing"
+                   WHEN Class = 1 THEN "One pair"
+                   WHEN Class = 2 THEN "Two pairs"
+                   WHEN Class = 3 THEN "Three of a kind"
+                   WHEN Class = 4 THEN "Straight"
+                   WHEN Class = 5 THEN "Flush"
+                   WHEN Class = 6 THEN "Full house"
+                   WHEN Class = 7 THEN "Four of a kind"
+                   WHEN Class = 8 THEN "Straight flush"
+                   WHEN Class = 9 THEN "Royal flush" 
+              END) AS [TipoENG],
+              ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM dsTeste)) * 100),2) AS [%]
+      FROM dsTeste 
+      GROUP BY class 
+      ORDER BY [Quantidade] DESC')
+```
+
+```{r}
+sqldf('SELECT COUNT(1) AS [Quantidade], 
+              resultado, 
+              (CASE WHEN Class = 0 THEN "Nothing"
+                   WHEN Class = 1 THEN "One pair"
+                   WHEN Class = 2 THEN "Two pairs"
+                   WHEN Class = 3 THEN "Three of a kind"
+                   WHEN Class = 4 THEN "Straight"
+                   WHEN Class = 5 THEN "Flush"
+                   WHEN Class = 6 THEN "Full house"
+                   WHEN Class = 7 THEN "Four of a kind"
+                   WHEN Class = 8 THEN "Straight flush"
+                   WHEN Class = 9 THEN "Royal flush" 
+              END) AS [TipoENG],
+              ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM dsTeste)) * 100),2) AS [%]
+      FROM dsTeste 
+      GROUP BY resultado 
+      ORDER BY [Quantidade] DESC')
 ```
 
 * como testar?
