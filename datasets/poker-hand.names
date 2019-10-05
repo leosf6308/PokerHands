@@ -1,4 +1,4 @@
-1. Title: Poker Hand Dataset 
+ï»¿1. Title: Poker Hand Dataset 
 
 2. Source Information
 
@@ -20,7 +20,7 @@ c) Date of release: Jan 2007
        - Note: This was a slightly different dataset that had more
                classes, and was considerably more difficult.
 
-    - Predictive attribute: Poker Hand (labeled ‘class’)
+    - Predictive attribute: Poker Hand (labeled â€˜classâ€™)
     - Found to be a challenging dataset for classification algorithms
     - Relational learners have an advantage for some classes
     - The ability to learn high level constructs has an advantage
@@ -30,46 +30,46 @@ c) Date of release: Jan 2007
      cards drawn from a standard deck of 52. Each card is described
      using two attributes (suit and rank), for a total of 10 predictive
      attributes. There is one Class attribute that describes the
-     “Poker Hand”. The order of cards is important, which is why there
+     â€œPoker Handâ€. The order of cards is important, which is why there
      are 480 possible Royal Flush hands as compared to 4 (one for each
-     suit – explained in more detail below).
+     suit â€“ explained in more detail below).
 
 5. Number of Instances: 25010 training, 1,000,000 testing
 
 6. Number of Attributes: 10 predictive attributes, 1 goal attribute
 
 7. Attribute Information:
-   1) S1 “Suit of card #1”
+   1) S1 â€œSuit of card #1â€
       Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
 
-   2) C1 “Rank of card #1”
+   2) C1 â€œRank of card #1â€
       Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
 
-   3) S2 “Suit of card #2”
+   3) S2 â€œSuit of card #2â€
       Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
 
-   4) C2 “Rank of card #2”
+   4) C2 â€œRank of card #2â€
       Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
 
-   5) S3 “Suit of card #3”
+   5) S3 â€œSuit of card #3â€
       Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
 
-   6) C3 “Rank of card #3”
+   6) C3 â€œRank of card #3â€
       Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
 
-   7) S4 “Suit of card #4”
+   7) S4 â€œSuit of card #4â€
       Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
 
-   8) C4 “Rank of card #4”
+   8) C4 â€œRank of card #4â€
       Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
 
-   9) S5 “Suit of card #5”
+   9) S5 â€œSuit of card #5â€
       Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs}
 
-   10) C5 “Rank of card 5”
+   10) C5 â€œRank of card 5â€
       Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King)
 
-   11) CLASS “Poker Hand”
+   11) CLASS â€œPoker Handâ€
       Ordinal (0-9)
 
       0: Nothing in hand; not a recognized poker hand 
