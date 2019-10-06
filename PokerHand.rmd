@@ -313,39 +313,15 @@ matrizConfusao <- table(pokerTeste$resultado_previsto,pokerTeste$CLASS)
 matrizConfusao
 ```
 
-## Treinando com a base de teste
-
 ```{r}
-nv <- naiveBayes(dsTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5")],dsTreino[,c("CLASS")])
-```
-
-```{r}
-str(nv)
-nv$apriori
-for (i in 0:9) {
-   print(nv$tables[i])
-}
-nv$levels
-```
-
-
-```{r}
-dsTeste$resultado <- predict(nv, newdata = dsTeste, type = "class")
-```
-
-```{r}
-matrizConfusao <- table(dsTeste$resultado,dsTeste$CLASS)
-matrizConfusao
+sum(pokerTeste$resultado_previsto != pokerTeste$CLASS) / nrow(pokerTeste)
 ```
 O primeiro treino errou muito. Que tal adicionar algumas colunas?
 
 ```{r}
-rm(i)
 rm(matrizConfusao)
 rm(resultado)
-rm(nv)
 ```
-
 
 ## Novas colunas
 - Contagem de cartas iguais
