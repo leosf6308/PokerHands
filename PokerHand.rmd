@@ -353,45 +353,52 @@ rm(nv)
 - É sequencial?
 
 ```{r}
-pokerTreino$id = seq.int(nrow(pokerTreino))
-#Contagem de naipes
-#transformar os 5 valores da coluna em linhas
-dsGather <- select(pokerTreino,id,S1,S2,S3,S4,S5) %>% gather(key,suit,S1:S5)
-#para cada item, agrupar e pegar o maior
-dsGroup1 <- group_by(select(dsGather,-key),id,suit) %>% summarise(soma = n())
-dsGroup2 <- group_by(dsGroup1,id) %>% summarise(suit = max(soma))
-pokerTreino <- merge(pokerTreino, dsGroup2, by.x = "id", by.y = "id")
+criarColunas <- function(dataset) {
+   dataset$id = seq.int(nrow(dataset))
+   #Contagem de naipes
+   #transformar os 5 valores da coluna em linhas
+   dsGather <- select(dataset,id,S1,S2,S3,S4,S5) %>% gather(key,suit,S1:S5)
+   #para cada item, agrupar e pegar o maior
+   dsGroup1 <- group_by(select(dsGather,-key),id,suit) %>% summarise(soma = n())
+   dsGroup2 <- group_by(dsGroup1,id) %>% summarise(suit = max(soma))
+   dataset <- merge(dataset, dsGroup2, by.x = "id", by.y = "id")
+   
+   #Contagem de valores
+   dsGather <- select(dataset,id,C1,C2,C3,C4,C5) %>% gather(key,rank,C1:C5)
+   dsGroup1 <- group_by(select(dsGather,-key),id,rank) %>% summarise(soma = n())
+   dsGroup2 <- group_by(dsGroup1,id) %>% summarise(rank = max(soma))
+   dataset <- merge(dataset, dsGroup2, by.x = "id", by.y = "id")
+   
+   #Teste de sequencial
+   dsGather <- select(dataset,id,C1,C2,C3,C4,C5) %>% gather(key,rank,C1:C5)
+   #inserir um sequencial para manter ordenação nos groupBy
+   dsGather$rank <- as.numeric(dsGather$rank)
+   dsGather <- arrange(dsGather,id,rank) %>% select(id,rank)
+   dsGather$pos <- rowid(dsGather$id)
+   dsGather$previous <- c(0,dsGather$rank[1:nrow(dsGather)-1])
+   #se é o primeiro da lista, não pode ser sequencial
+   dsGather$sequential <- ifelse(dsGather$pos == 1,0,dsGather$rank-1 == dsGather$previous)
+   #Sequencial especial: 1 e 13. Se existe 1 e 13 para um ID em específico, iremos dizer que o 1 é sequencial
+   idsContem1e13 <- intersect(unique(dsGather$id[dsGather$rank==1]),unique(dsGather$id[dsGather$rank==13]))
+   dsGather$sequential[dsGather$id %in% idsContem1e13 & dsGather$pos == 1 & dsGather$rank == 1] <- 1
+   #dsGather[dsGather$id == 3758 | dsGather$id == 8,]
+   #select(dsGather,id,pos,rank,previous,sequential)
+   dsGroup1 <- group_by(dsGather,id) %>% summarise(is_sequential = sum(sequential) == 4)
+   dataset <- merge(dataset, dsGroup1, by.x = "id", by.y = "id")
+   rm(idsContem1e13)
+   rm(dsGather)
+   rm(dsGroup1)
+   rm(dsGroup2)
+   #select(pokerTreino,id,C1,C2,C3,C4,C5,is_sequencial)
+   dataset <- data.frame(select(dataset,-c(id)))
+   return(dataset)
+}
 
-#Contagem de valores
-dsGather <- select(pokerTreino,id,C1,C2,C3,C4,C5) %>% gather(key,rank,C1:C5)
-dsGroup1 <- group_by(select(dsGather,-key),id,rank) %>% summarise(soma = n())
-dsGroup2 <- group_by(dsGroup1,id) %>% summarise(rank = max(soma))
-pokerTreino <- merge(pokerTreino, dsGroup2, by.x = "id", by.y = "id")
-
-#Teste de sequencial
-dsGather <- select(pokerTreino,id,C1,C2,C3,C4,C5) %>% gather(key,rank,C1:C5)
-#inserir um sequencial para manter ordenação nos groupBy
-dsGather$rank <- as.numeric(dsGather$rank)
-dsGather <- arrange(dsGather,id,rank) %>% select(id,rank)
-dsGather$pos <- rowid(dsGather$id)
-dsGather$previous <- c(0,dsGather$rank[1:nrow(dsGather)-1])
-#se é o primeiro da lista, não pode ser sequencial
-dsGather$sequential <- ifelse(dsGather$pos == 1,0,dsGather$rank-1 == dsGather$previous)
-#Sequencial especial: 1 e 13. Se existe 1 e 13 para um ID em específico, iremos dizer que o 1 é sequencial
-idsContem1e13 <- intersect(unique(dsGather$id[dsGather$rank==1]),unique(dsGather$id[dsGather$rank==13]))
-dsGather$sequential[dsGather$id %in% idsContem1e13 & dsGather$pos == 1 & dsGather$rank == 1] <- 1
-#dsGather[dsGather$id == 3758 | dsGather$id == 8,]
-#select(dsGather,id,pos,rank,previous,sequential)
-dsGroup1 <- group_by(dsGather,id) %>% summarise(is_sequential = sum(sequential) == 4)
-pokerTreino <- merge(pokerTreino, dsGroup1, by.x = "id", by.y = "id")
-rm(idsContem1e13)
-rm(dsGather)
-rm(dsGroup1)
-rm(dsGroup2)
-#select(pokerTreino,id,C1,C2,C3,C4,C5,is_sequencial)
+pokerTreino <- criarColunas(pokerTreino)
+pokerTeste <- criarColunas(pokerTeste)
 
 #Única sequência!
-pokerTreino[pokerTreino$C1 == 9 & pokerTreino$C2 == 10 & pokerTreino$C3 == 11 & pokerTreino$C4 == 12 & pokerTreino$C5 == 13,] %>% select(id,C1,C2,C3,C4,C5,suit,rank,is_sequential,CLASS)
+#pokerTreino[pokerTreino$C1 == 9 & pokerTreino$C2 == 10 & pokerTreino$C3 == 11 & pokerTreino$C4 == 12 & pokerTreino$C5 == 13,] %>% select(id,C1,C2,C3,C4,C5,suit,rank,is_sequential,CLASS)
 ```
 
 Vamos treinar novamente!
@@ -403,8 +410,20 @@ nv <- naiveBayes(pokerTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5
 E vamos testar
 ```{r}
 pokerTreino$resultado <- predict(nv, newdata = pokerTreino, type = "class")
+pokerTeste$resultado <- predict(nv, newdata = pokerTeste, type = "class")
+```
+
+Matriz de confusão
+```{r}
 matrizConfusao <- table(pokerTreino$resultado,pokerTreino$CLASS)
+matrizConfusao
+matrizConfusao <- table(pokerTeste$resultado,pokerTeste$CLASS)
 matrizConfusao
 ```
 
+Quanto está OK?
+```{r}
+sum(pokerTreino$resultado != pokerTreino$CLASS) / nrow(pokerTreino)
+sum(pokerTeste$resultado != pokerTeste$CLASS) / nrow(pokerTeste)
+```
 
