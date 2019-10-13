@@ -1,50 +1,22 @@
 ---
-title: "PokerHand"
+title: "Avaliação"
 author: "Fernando e Leonardo"
 date: "01/10/2019"
-output: pdf_document
+output:
+   word_document:
+      reference_docx: documentoModeloABNT.docx
 ---
 
-# Avaliação
-
-## Introdução
+# Introdução
 
 Esse trabalho analisa um `dataset` de mãos de Poker que consistem de 5 cartas. O objetivo é analisar as 5 cartas e estimar qual é a mão para aquele jogo.
 
-## Naïve Bayes
+# Naïve Bayes
 
-No ramo de Machine Learning, o Naïve Bayes é um grupo de classificadores probabilísticos simples (@wiki1). O algoritmo assume que não há dependência entre as variáveis de entrada, mas que eles dependem de eventos que aconteceram anteriormente. Baseiam-se no teorema de Bayes, que descreve a probablidade de um evento com base nas condições anteriores a esse evento (@wiki2).
+No ramo de Machine Learning, Naïve Bayes é um grupo de classificadores probabilísticos simples (Wikipedia, 2019). Esses classificadores possuem a característica comum de se basear no teorema de Bayes, que calcula a probabilidade de um evento dado que outro evento já ocorreu (@voitto1). Esses algoritmos não assumem dependência entre as variáveis e, por isso eles são considerados ingênuos (naive).
+Devido à simplicidade do algoritmo ele é mais rápido que outros classificadores e costuma ser utilizado para classificar textos através da frequência das palavras utilizadas  (Becker, 2019).
 
-O algoritmo Naïve Bayes foi largamente utilizado devido à sua simplicidade @slTing1 
-
-Executa em tempo linear (@REF), em oposição ao tempo 
-
-
-Fórmula
-P (A | B)
-Probabilidade de A acontecer se B acontecer antes.
-
-***O que é este Laplace Smoothing nos parâmetros da função
-***Esse algoritmo supõe distribuição gaussiana. Isso bate com o dataframe?
-
-## Tipos de mãos do Poker
-
-| Classe | Nome            | Descrição                                                      |
-|:------:|-----------------|----------------------------------------------------------------|
-| 0      | Carta mais alta | Nenhuma mão de Poker, vence quem possuir a carta mais alta     |
-| 1      | Um par          | Duas cartas de mesmo valor                                     |
-| 2      | Dois pares      | Dois valores se repetem entre as 5 cartas                      | 
-| 3      | Trinca          | Três cartas de valores iguais                                  |
-| 4      | Sequência       | 5 cartas em sequência, sem interrupção                         |
-| 5      | Flush           | 5 cartas de mesmo naipe                                        |
-| 6      | Full House      | Uma trinca e um par na mesma mão                               |
-| 7      | Quadra          | 4 cartas de mesmo valor                                        |
-| 8      | Straight Flush  | 5 cartas em sequência e do mesmo naipe, sem lacunas            |
-| 9      | Royal Flush     | Sequência Dez, Valete, Dama, Rei e Ás, do mesmo naipe          |
-
-A ordem dessa tabela é da mão mais baixa à mão mais alta. A que possui número de classe maior vence sobre as mãos de classe menor.
-
-## Estrutura do Dataset
+# Estrutura do Dataset
 
 O dataset PokerHands possui as seguintes colunas:
  1) S1 - Naipe da carta #1: Ordinal (1-4) representando o naipe (Copas, Espadas, Ouros, Paus)
@@ -59,41 +31,84 @@ O dataset PokerHands possui as seguintes colunas:
 10) C5 - Valor da carta #5: Numérico (1-13) representando o valor
 11) CLASS - Classificação: Ordinal (0-9) representando a classe que essa mão representa
 
-## Bibliotecas utilizadas
+# Tipos de mãos do Poker
 
-```{r}
+As mãos do Poker são classificadas em 9 tipos, conforme a tabela a seguir. O jogador que possui a maior "mão" vencerá. A tabela está classificada conforme as variáveis do `dataset`.
+
+| Classe | Nome            | Descrição                                                      |
+|:------:|:----------------|:---------------------------------------------------------------|
+| 0      | Carta mais alta | Nenhuma mão de Poker, vence quem possuir a carta mais alta     |
+| 1      | Um par          | Duas cartas de mesmo valor                                     |
+| 2      | Dois pares      | Dois valores se repetem entre as 5 cartas                      | 
+| 3      | Trinca          | Três cartas de valores iguais                                  |
+| 4      | Sequência       | 5 cartas em sequência, sem interrupção                         |
+| 5      | Flush           | 5 cartas de mesmo naipe                                        |
+| 6      | Full House      | Uma trinca e um par na mesma mão                               |
+| 7      | Quadra          | 4 cartas de mesmo valor                                        |
+| 8      | Straight Flush  | 5 cartas em sequência e do mesmo naipe, sem lacunas            |
+| 9      | Royal Flush     | Sequência Dez, Valete, Dama, Rei e Ás, do mesmo naipe          |
+
+# Bibliotecas utilizadas
+
+```{r setup, echo = T, results='hide'}
 library(readr) # Para carregamento do arquivo
 library(sqldf) # Para executar SQLs sobre os DataSets
 library(e1071) # Contém o algoritmo de Naïve Bayes
 library(tidyr) # Para transformar colunas em observações
 library(dplyr) # Para operações de seleção, agrupamento
 library(ggplot2)
+library(RColorBrewer)
 library(data.table) # Para incluir sequencial em grupos
+library(knitr)
+library(kableExtra)
+library(pander) # Para 
 ```
 
-## Carregando o arquivo
+# Carregando o arquivo
 
-Leitura do arquivo. Os dados serão lidos como "factors" porquê são variáveis ordinais discretas.
-```{r}
-pokerTreino <- read_csv("datasets/poker-hand-training-true.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
-head(pokerTreino)
-```
-
-Leitura do arquivo de teste
-```{r}
-pokerTeste <- read_csv("datasets/poker-hand-testing.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"), col_types = cols(.default = col_factor()))
-head(pokerTeste)
+Leitura dos arquivos. Os arquivos não possuem cabeçalho.
+```{r readPokerTreino}
+pokerTreino <- read_csv("datasets/poker-hand-training-true.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"))
+pokerTeste <- read_csv("datasets/poker-hand-testing.data", col_names = c ("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","CLASS"))
 ```
 
 ## Ajustes
-```{r}
-pokerTreino$CLASS <- factor(pokerTreino$CLASS, levels=c(0,1,2,3,4,5,6,7,8,9), ordered =TRUE)
-pokerTeste$CLASS <- factor(pokerTeste$CLASS, levels=c(0,1,2,3,4,5,6,7,8,9), ordered =TRUE)
+A classe será transforamda em um fator ordenado.
+```{r dsAjustar}
+pokerTreino$S1 <- factor(pokerTreino$S1, levels=c(1:4), ordered = TRUE)
+pokerTreino$C1 <- factor(pokerTreino$C1, levels=c(1:13), ordered = TRUE)
+pokerTreino$S2 <- factor(pokerTreino$S2, levels=c(1:4), ordered = TRUE)
+pokerTreino$C2 <- factor(pokerTreino$C2, levels=c(1:13), ordered = TRUE)
+pokerTreino$S3 <- factor(pokerTreino$S3, levels=c(1:4), ordered = TRUE)
+pokerTreino$C3 <- factor(pokerTreino$C3, levels=c(1:13), ordered = TRUE)
+pokerTreino$S4 <- factor(pokerTreino$S4, levels=c(1:4), ordered = TRUE)
+pokerTreino$C4 <- factor(pokerTreino$C4, levels=c(1:13), ordered = TRUE)
+pokerTreino$S5 <- factor(pokerTreino$S5, levels=c(1:4), ordered = TRUE)
+pokerTreino$C5 <- factor(pokerTreino$C5, levels=c(1:13), ordered = TRUE)
+pokerTreino$CLASS <- factor(pokerTreino$CLASS, levels=c(0:9), ordered =TRUE)
+
+pokerTeste$S1 <- factor(pokerTeste$S1, levels=c(1:4), ordered = TRUE)
+pokerTeste$C1 <- factor(pokerTeste$C1, levels=c(1:13), ordered = TRUE)
+pokerTeste$S2 <- factor(pokerTeste$S2, levels=c(1:4), ordered = TRUE)
+pokerTeste$C2 <- factor(pokerTeste$C2, levels=c(1:13), ordered = TRUE)
+pokerTeste$S3 <- factor(pokerTeste$S3, levels=c(1:4), ordered = TRUE)
+pokerTeste$C3 <- factor(pokerTeste$C3, levels=c(1:13), ordered = TRUE)
+pokerTeste$S4 <- factor(pokerTeste$S4, levels=c(1:4), ordered = TRUE)
+pokerTeste$C4 <- factor(pokerTeste$C4, levels=c(1:13), ordered = TRUE)
+pokerTeste$S5 <- factor(pokerTeste$S5, levels=c(1:4), ordered = TRUE)
+pokerTeste$C5 <- factor(pokerTeste$C5, levels=c(1:13), ordered = TRUE)
+pokerTeste$CLASS <- factor(pokerTeste$CLASS, levels=c(0:9), ordered =TRUE)
 ```
 
+## Cabeçalho
+```{r}
+pander(head(pokerTreino)) 
+pander(head(pokerTeste))
+```
 
-## Análise do arquivo
+# Análise do arquivo
 
+Estrutura do arquivo:
 ```{r}
 str(pokerTreino)
 ```
@@ -102,7 +117,7 @@ Sumário do arquivo
 summary(pokerTreino)
 ```
 
-## Análise exploratória
+# Análise exploratória
 
 Total de linhas nos datasets
 ```{r}
@@ -112,12 +127,12 @@ paste("Linhas no dataset de teste:", nrow(pokerTeste))
 
 Visualização do início do DataSet
 ```{r}
-head(pokerTreino)
+pander(head(pokerTreino))
 ```
 
 Divisão dos registros no dataset
 ```{r}
-sqldf('SELECT COUNT(1) AS [Quantidade], 
+pander(sqldf('SELECT COUNT(1) AS [Quantidade], 
               class, 
               (CASE WHEN Class = 0 THEN "Nothing"
                    WHEN Class = 1 THEN "One pair"
@@ -133,7 +148,7 @@ sqldf('SELECT COUNT(1) AS [Quantidade],
               ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerTreino)) * 100),2) AS [%]
       FROM pokerTreino 
       GROUP BY class 
-      ORDER BY [Quantidade] DESC')
+      ORDER BY [Quantidade] DESC'))
 ```
 
 Distribuição das classes
@@ -143,7 +158,7 @@ ggplot(data = pokerTreino, aes(CLASS)) + geom_bar(aes(fill=CLASS))
 
 Unica combinação que se repetiu
 ```{r}
-sqldf('SELECT DISTINCT 
+pander(sqldf('SELECT DISTINCT 
               COUNT(1) AS [Quantidade], 
               class, 
               (CASE WHEN Class = 0 THEN "Nothing"
@@ -170,12 +185,12 @@ sqldf('SELECT DISTINCT
       FROM pokerTreino 
       GROUP BY class, [TipoENG], S1, C1, S2, C2, S3, C3, S4, C4, S5, C5 
       HAVING COUNT(1) > 1
-      ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC')
+      ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC'))
 ```
 
 Quantidade de linhas onde as combinações são unicas: 25006 de 25010
 ```{r}
-head(sqldf('SELECT DISTINCT 
+pander(head(sqldf('SELECT DISTINCT 
               COUNT(1) AS [Quantidade], 
               class, 
               (CASE WHEN Class = 0 THEN "Nothing"
@@ -202,64 +217,88 @@ head(sqldf('SELECT DISTINCT
       FROM pokerTreino 
       GROUP BY class, [TipoENG], S1, C1, S2, C2, S3, C3, S4, C4, S5, C5 
       HAVING COUNT(1) = 1
-      ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC'))
+      ORDER BY S1, C1, S2, C2, S3, C3, S4, C4, S5, C5  DESC')))
 ```
 
-Quantidade de números distintos por coluna
+Distribuição das cartas
 ```{r}
-sqldf('SELECT DISTINCT
-       S1,
-       C1,
-       COUNT(1) AS [Quantidade],
-       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerTreino)) * 100),2) AS [%]
-      FROM pokerTreino 
-      GROUP BY S1, C1
-      ORDER BY [Quantidade] DESC')
+dataset <- data.frame(pokerTreino)
+dataset$id = seq.int(nrow(dataset))
+ds1 <- select(dataset,id,S1,S2,S3,S4,S5) %>% gather(key,suit,S1:S5)
+ds2 <- select(dataset,id,C1,C2,C3,C4,C5) %>% gather(key,rank,C1:C5)
+ds1$key <- sub("S","",ds1$key)
+ds2$key <- sub("C","",ds2$key)
+cartasTreino <- merge(ds1, ds2, by.x = c("id","key"), by.y = c("id","key"))
+rm(dataset)
+rm(ds1)
+rm(ds2)
+cartas <- data.frame(card = paste(cartasTreino$suit,"-",cartasTreino$rank))
+color.pallete <- colorRampPalette(brewer.pal(8, "Set1"))(52)
+ggplot(data = cartas, aes(x = card)) + geom_bar(aes(fill=card)) + theme(axis.text.x = element_text(angle = 90), legend.position = "none") + scale_fill_manual(values=color.pallete)
+rm(cartas)
+rm(color.pallete)
 ```
 
-Quantidade de números distintos por coluna
+Quantidade de cartas distintas:
 ```{r}
-sqldf('SELECT DISTINCT
-       C1,
-       S1,
+pander(sqldf('SELECT DISTINCT
+       suit,
+       rank,
        COUNT(1) AS [Quantidade],
-       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM pokerTreino)) * 100),2) AS [%]
-      FROM pokerTreino 
-      GROUP BY C1
-      ORDER BY [Quantidade] DESC')
+       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM cartasTreino)) * 100),2) AS [%]
+      FROM cartasTreino 
+      GROUP BY suit, rank
+      ORDER BY [Quantidade] DESC'))
+```
+
+Quantidade de números de carta distintos:
+```{r}
+pander(sqldf('SELECT DISTINCT
+       rank,
+       suit,
+       COUNT(1) AS [Quantidade],
+       ROUND(((CAST (COUNT(1) AS real)/(SELECT COUNT(1) FROM cartasTreino)) * 100),2) AS [%]
+      FROM cartasTreino 
+      GROUP BY rank
+      ORDER BY [Quantidade] DESC'))
+```
+
+```{r}
+rm(cartasTreino)
 ```
 
 
-## Treinamento
+# Treinamento
 
 Treinar com o Naïve Bayes
 ```{r}
 pokerTreino <- data.frame(pokerTreino)
-resultado <- naiveBayes(pokerTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5")],pokerTreino[,c("CLASS")])
+nv <- naiveBayes(pokerTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5")],pokerTreino[,c("CLASS")])
 ```
 
 Como o algoritmo estruturou seus parâmetros:
 ```{r}
-str(resultado)
+str(nv)
 ```
 
-?
+Níveis e distribuição dos valores de treino:
 ```{r}
-resultado$levels
-resultado$apriori
+nv$levels
+nv$apriori
 ```
 
-Estrutura de cada parâmetro
+Probabilidades de cada parâmetro:
 ```{r}
 for (i in 0:9) {
-   print(resultado$tables[i])
+   print(nv$tables[i])
 }
+rm(i)
 ```
 
 Tentar predizer e verificar com o resultado
 ```{r}
-pokerTeste$resultado_previsto <- predict(resultado, newdata = pokerTeste[1:10], type = "class")
-View(pokerTeste)
+pokerTeste <- data.frame(pokerTeste)
+pokerTeste$resultado_previsto <- predict(nv, newdata = pokerTeste[1:10], type = "class")
 ```
 
 Matriz de confusão
@@ -274,13 +313,21 @@ paste("Erro na estimativa durante treino:", sum(as.numeric(pokerTeste$resultado_
 ```
 50% de erro é um valor muito alto. Precisaremos fornecer mais informações para o algoritmo.
 
+Distribuição do erro por classe:
+```{r}
+res <- transmute(pokerTeste, CLASS, resultado_previsto, errado = (as.numeric(resultado_previsto) != as.numeric(CLASS)))
+res <- group_by(res,CLASS) %>% summarise(count = n(), errors = sum(errado), proporcao = sum(errado)/n())
+ggplot(data=res, aes(x = CLASS, y = proporcao)) + geom_bar(aes(fill=CLASS), stat = "identity")
+rm(res)
+```
+
 Limpeza
 ```{r}
 rm(matrizConfusao)
-rm(resultado)
+rm(nv)
 ```
 
-## Novas colunas
+# Novas colunas
 Incluir colunas para:
 - Contagem de cartas iguais
 - Contagem de cartas do mesmo naipe
@@ -315,37 +362,43 @@ criarColunas <- function(dataset) {
    #Sequencial especial: 1 e 13. Se existe 1 e 13 para um ID em específico, iremos dizer que o 1 é sequencial
    idsContem1e13 <- intersect(unique(dsGather$id[dsGather$rank==1]),unique(dsGather$id[dsGather$rank==13]))
    dsGather$sequential[dsGather$id %in% idsContem1e13 & dsGather$pos == 1 & dsGather$rank == 1] <- 1
-   #dsGather[dsGather$id == 3758 | dsGather$id == 8,]
-   #select(dsGather,id,pos,rank,previous,sequential)
    dsGroup1 <- group_by(dsGather,id) %>% summarise(is_sequential = sum(sequential) == 4)
    dataset <- merge(dataset, dsGroup1, by.x = "id", by.y = "id")
    rm(idsContem1e13)
    rm(dsGather)
    rm(dsGroup1)
    rm(dsGroup2)
-   #select(pokerTreino,id,C1,C2,C3,C4,C5,is_sequencial)
    dataset <- data.frame(select(dataset,-c(id)))
    return(dataset)
 }
 
 pokerTreino <- criarColunas(pokerTreino)
 pokerTeste <- criarColunas(pokerTeste)
-
-#Única sequência!
-#pokerTreino[pokerTreino$C1 == 9 & pokerTreino$C2 == 10 & pokerTreino$C3 == 11 & pokerTreino$C4 == 12 & pokerTreino$C5 == 13,] %>% select(id,C1,C2,C3,C4,C5,suit,rank,is_sequential,CLASS)
+rm(criarColunas)
 ```
 
 Vamos treinar novamente:
 ```{r}
+#dadosTreino <- data.frame(lapply(pokerTreino, function(x) as.factor(x)))
 pokerTreino <- data.frame(pokerTreino)
 nv <- naiveBayes(pokerTreino[,c("S1","C1","S2","C2","S3","C3","S4","C4","S5","C5","suit","rank","is_sequential")],pokerTreino[,c("CLASS")])
+nv$levels
 nv$apriori
 ```
 
 Novos testes (com a base de treino e a base de teste):
 ```{r}
 pokerTreino$resultado <- predict(nv, newdata = pokerTreino, type = "class")
+pokerTeste <- data.frame(pokerTeste)
 pokerTeste$resultado <- predict(nv, newdata = pokerTeste, type = "class")
+
+dadosTreino <- data.frame(lapply(pokerTreino, function(x) as.factor(x)))
+pokerTreino$resultado <- predict(nv, newdata = dadosTreino, type = "class")
+rm(dadosTreino)
+
+dadosTeste <- data.frame(lapply(pokerTeste, function(x) as.factor(x)))
+pokerTeste$resultado <- predict(nv, newdata = dadosTeste, type = "class")
+rm(dadosTeste)
 ```
 
 Matriz de confusão
@@ -359,44 +412,40 @@ matrizConfusao
 Porcentagem de erros.
 ```{r}
 paste("Erro de predição no dataset de treino:", sum(as.numeric(pokerTreino$resultado) != as.numeric(pokerTreino$CLASS)) / nrow(pokerTreino))
-paste("Erro de predição no dataset de teste:", sum(as.numeric(pokerTeste$resultado) != as.numeric(pokerTeste$CLASS)) / nrow(pokerTeste))
+paste("Erro de predição no dataset de teste:", sum(as.numeric(pokerTeste$resultado) != as.numeric(pokerTeste$CLASS)) / nrow(pokerTeste) )
 ```
 Aproximadamente 6%.
 
-## Fontes
+Distribuição do erro por classe:
+```{r}
+res <- transmute(pokerTeste, CLASS, resultado, errado = (as.numeric(resultado) != as.numeric(CLASS)))
+res <- group_by(res,CLASS) %>% summarise(count = n(), errors = sum(errado), proporcao = sum(errado)/n())
+ggplot(data=res, aes(x = CLASS, y = proporcao)) + geom_bar(aes(fill=CLASS), stat = "identity")
+```
 
-[1] UCI Poker Hand Dataset https://archive.ics.uci.edu/ml/datasets/Poker+Hand
 
-[2] https://www.pokerstars.com/br/poker/games/rules/?no_redirect=1
+# Fontes
 
-[3] https://br.pokernews.com/regras-poker/
+Becker, Lauro. **Algoritmo de Classificação Naive Bayes**. 2019. Disponível em: <https://www.organicadigital.com/blog/algoritmo-de-classificacao-naive-bayes/>. Acesso em 12 de outubro de 2019.
 
-[]
-[] https://en.wikipedia.org/wiki/Bayesian_inference
-[] https://en.wikipedia.org/wiki/Bayes%27_theorem
-[] https://en.wikipedia.org/wiki/Maximum_likelihood_estimation
+Gonçalves, Thiago. **Teorema de Bayes: o que é e qual sua aplicação?**. 2019. Disponível em: <https://www.voitto.com.br/blog/artigo/teorema-de-bayes>. Acesso em 12 de outubro de 2019.
 
-@slTing1
-S.L. Ting, W.H. Ip, Albert H.C. Tsang "Is Naïve Bayes a Good Classifier for Document Classification?" International Journal of Software Engineering and Its Applications, University, Hung Hum, Kowloon, Hong Kong, 2011
+Oppermann, Artem. **Bayes’ Theorem: The Holy Grail of Data Science**. 2018. Disponível em: <https://towardsdatascience.com/bayes-theorem-the-holy-grail-of-data-science-55d93315defb>. Acesso em 06 de Outubro de 2019.
 
-@oracle1
-Naive Bayes, Oracle Database Online Documentation Library, 12c Release 1 (12.1.0.2), https://docs.oracle.com/database/121/DMCON/GUID-BB77D68D-3E07-4522-ACB6-FD6723BDA92A.htm#DMCON343, Acesso em 06/10/2019
+Oracle Corporation, 2017. **Naive Bayes, Oracle Database Online Documentation Library, 12c Release 1 (12.1.0.2)**. Disponível em: <https://docs.oracle.com/database/121/DMCON/GUID-BB77D68D-3E07-4522-ACB6-FD6723BDA92A.htm#DMCON343>. Acesso em 06 de Outubro de 2019.
 
-@wiki1
-https://en.wikipedia.org/wiki/Naive_Bayes_classifier, Acesso em 06/10/2019
+Robert Cattral, Franz Oppacher. **UCI Poker Hand Dataset**. 2007. Disponível em <https://archive.ics.uci.edu/ml/datasets/Poker+Hand>. Acesso em 06 de outubro de 2019
+
+S.L. Ting, W.H. Ip, Albert H.C. Tsang. **Is Naïve Bayes a Good Classifier for Document Classification?*"** International Journal of Software Engineering and Its Applications, University, Hung Hum, Kowloon, Hong Kong, 2011
+
+**As Regras de Poker Online**. In: Pokerstars. Disponível em: <https://www.pokerstars.com/br/poker/games/rules/?no_redirect=1>. Acesso em 12 de outubro de 2019.
+
+**Regras de Poker: como jogar poker passo a passo**. In: PokerNews. Disponível em: <https://br.pokernews.com/regras-poker/>. Acesso em 12 de Outubro de 2019.
+
+**Bayesian inference**. In: Wikipedia, a enciclopédia livre. Wikimedia Foundation, 2019. Disponível em: <https://en.wikipedia.org/wiki/Bayesian_inference>. Acesso em 12 de Outubro de 2019.
+
+**Bayes' theorem**. In: Wikipedia, a enciclopédia livre. Wikimedia Foundation, 2019. Disponível em: <https://en.wikipedia.org/wiki/Bayes%27_theorem>. Acesso em 06 de Outubro de 2019.
+
+**Naive Bayes classifier**. In: Wikipedia, a enciclopédia livre. Wikimedia Foundation, 2019. Disponível em: <https://en.wikipedia.org/w/index.php?title=Naive_Bayes_classifier&oldid=920481611>. Acesso em 06 de Outubro de 2019.
  
-@wiki2
-https://en.wikipedia.org/wiki/Bayesian_probability, Acesso em 06/10/2019
-
-@wiki3
-https://en.wikipedia.org/wiki/Bayes%27_theorem, Acesso em 06/10/2019
-
-@tds1
-https://towardsdatascience.com/bayes-theorem-the-holy-grail-of-data-science-55d93315defb, Acesso em 06/10/2019
-
-@
-https://www.mathsisfun.com/data/bayes-theorem.html
-
-https://betterexplained.com/articles/an-intuitive-and-short-explanation-of-bayes-theorem/
-
-https://towardsdatascience.com/naive-bayes-classifier-81d512f50a7c
+**Bayesian probability**. In: Wikipedia, a enciclopédia livre. Wikimedia Foundation, 2019. Disponível em: <https://en.wikipedia.org/w/index.php?title=Bayesian_probability&oldid=920310586>. Acesso em 06 de Outubro de 2019.
