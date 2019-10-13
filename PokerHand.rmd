@@ -13,22 +13,34 @@ Esse trabalho analisa um `dataset` de mãos de Poker que consistem de 5 cartas. 
 
 # Naïve Bayes
 
-No ramo de Machine Learning, Naïve Bayes é um grupo de classificadores probabilísticos simples (Wikipedia, 2019). Esses classificadores possuem a característica comum de se basear no teorema de Bayes, que calcula a probabilidade de um evento dado que outro evento já ocorreu (@voitto1). Esses algoritmos não assumem dependência entre as variáveis e, por isso eles são considerados ingênuos (naive).
+No ramo de Machine Learning, Naïve Bayes é um grupo de classificadores probabilísticos simples (Wikipedia, 2019). Esses classificadores possuem a característica comum de se basear no teorema de Bayes, que calcula a probabilidade de um evento dado que outro evento já ocorreu (Gonçalves, 2019). Esses algoritmos não assumem dependência entre as variáveis e, por isso eles são considerados ingênuos (naive).
+
 Devido à simplicidade do algoritmo ele é mais rápido que outros classificadores e costuma ser utilizado para classificar textos através da frequência das palavras utilizadas  (Becker, 2019).
 
 # Estrutura do Dataset
 
 O dataset PokerHands possui as seguintes colunas:
+
  1) S1 - Naipe da carta #1: Ordinal (1-4) representando o naipe (Copas, Espadas, Ouros, Paus)
+ 
  2) C1 - Valor da carta #1: Numérico (1-13) representando o valor ou número da carta (Ás, 2, 3, ..., 10, Valete, Rainha, Rei)
+ 
  3) S2 - Naipe da carta #2: Ordinal (1-4) representando o naipe
+ 
  4) C2 - Valor da carta #2: Numérico (1-13) representando o valor
+ 
  5) S3 - Naipe da carta #3: Ordinal (1-4) representando o naipe
+ 
  6) C3 - Valor da carta #3: Numérico (1-13) representando o valor
+ 
  7) S4 - Naipe da carta #4: Ordinal (1-4) representando o naipe
+ 
  8) C4 - Valor da carta #4: Numérico (1-13) representando o valor
+ 
  9) S5 - Naipe da carta #5: Ordinal (1-4) representando o naipe
+ 
 10) C5 - Valor da carta #5: Numérico (1-13) representando o valor
+
 11) CLASS - Classificação: Ordinal (0-9) representando a classe que essa mão representa
 
 # Tipos de mãos do Poker
